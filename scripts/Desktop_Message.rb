@@ -14,6 +14,7 @@ class Desktop_Message
     @sprite_bg.zoom_x = @sprite_bg.zoom_y = 2
     @sprite_text = Sprite.new(@viewport)
     @contents = Bitmap.new(640, HEIGHT)
+    Language.register_text_sprite(self.class.name + "_contents", @contents)
     @sprite_text.bitmap = @contents
     @sprite_text.y = (480 - HEIGHT) / 2
     @sprite_bg.z = 0
@@ -177,7 +178,7 @@ class Desktop_Message
     end
 
     if visible
-      if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL)
+      if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL) || (Input.press?(Input::R) && $game_switches[253])
         terminate_message
         @fade_out = true
       end

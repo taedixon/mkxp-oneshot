@@ -10,10 +10,10 @@
   including without limitation the rights to use, copy, modify, merge,
   publish, distribute, sublicense, and/or sell copies of the Software,
   and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
+  subject to the following conditions: 
 
   The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
+  included in all copies or substantial portions of the Software. 
 
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -24,6 +24,8 @@
   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
+
+#include "xdg-user-dir-lookup.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +47,7 @@
  * free(). The return value is never NULL if @fallback != NULL, unless
  * out of memory.
  **/
-static char *
+char *
 xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
 {
   FILE *file;
@@ -55,7 +57,7 @@ xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
   char *p, *d;
   int len;
   int relative;
-
+  
   home_dir = getenv ("HOME");
 
   if (home_dir == NULL)
@@ -93,11 +95,11 @@ xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
       len = strlen (buffer);
       if (len > 0 && buffer[len-1] == '\n')
 	buffer[len-1] = 0;
-
+      
       p = buffer;
       while (*p == ' ' || *p == '\t')
 	p++;
-
+      
       if (strncmp (p, "XDG_", 4) != 0)
 	continue;
       p += 4;
@@ -114,14 +116,14 @@ xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
       if (*p != '=')
 	continue;
       p++;
-
+      
       while (*p == ' ' || *p == '\t')
 	p++;
 
       if (*p != '"')
 	continue;
       p++;
-
+      
       relative = 0;
       if (strncmp (p, "$HOME/", 6) == 0)
 	{
@@ -130,7 +132,7 @@ xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
 	}
       else if (*p != '/')
 	continue;
-
+      
       if (relative)
 	{
 	  user_dir = (char*) malloc (strlen (home_dir) + 1 + strlen (p) + 1);
@@ -148,7 +150,7 @@ xdg_user_dir_lookup_with_fallback (const char *type, const char *fallback)
 
 	  *user_dir = 0;
 	}
-
+      
       d = user_dir + strlen (user_dir);
       while (*p && *p != '"')
 	{
@@ -187,20 +189,20 @@ error2:
  * The return value is newly allocated and must be freed with
  * free().
  **/
-static char *
+char *
 xdg_user_dir_lookup (const char *type)
 {
   char *dir, *home_dir, *user_dir;
-
+	  
   dir = xdg_user_dir_lookup_with_fallback (type, NULL);
   if (dir != NULL)
     return dir;
-
+  
   home_dir = getenv ("HOME");
-
+  
   if (home_dir == NULL)
     return strdup ("/tmp");
-
+  
   /* Special case desktop for historical compatibility */
   if (strcmp (type, "DESKTOP") == 0)
     {
@@ -212,7 +214,7 @@ xdg_user_dir_lookup (const char *type)
       strcat (user_dir, "/Desktop");
       return user_dir;
     }
-
+  
   return strdup (home_dir);
 }
 
@@ -225,7 +227,7 @@ main (int argc, char *argv[])
       fprintf (stderr, "Usage %s <dir-type>\n", argv[0]);
       exit (1);
     }
-
+  
   printf ("%s\n", xdg_user_dir_lookup (argv[1]));
   return 0;
 }

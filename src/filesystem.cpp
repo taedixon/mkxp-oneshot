@@ -40,7 +40,8 @@
 #include <stack>
 
 #ifdef __APPLE__
-#include <iconv.h>
+	#define OS_OSX
+	#include <iconv.h>
 #endif
 
 struct SDLRWIoContext
@@ -311,13 +312,10 @@ struct FileSystemPrivate
 	bool havePathCache;
 };
 
-FileSystem::FileSystem(const char *argv0,
-                       bool allowSymlinks)
+FileSystem::FileSystem(bool allowSymlinks)
 {
 	p = new FileSystemPrivate;
 	p->havePathCache = false;
-
-	PHYSFS_init(argv0);
 
 	PHYSFS_registerArchiver(&RGSS1_Archiver);
 	PHYSFS_registerArchiver(&RGSS2_Archiver);
@@ -354,7 +352,7 @@ struct CacheEnumData
 	FileSystemPrivate *p;
 	std::stack<std::vector<std::string>*> fileLists;
 
-#ifdef __APPLE__
+#ifdef OS_OSX
 	iconv_t nfd2nfc;
 	char buf[512];
 #endif
@@ -362,14 +360,14 @@ struct CacheEnumData
 	CacheEnumData(FileSystemPrivate *p)
 	    : p(p)
 	{
-#ifdef __APPLE__
+#ifdef OS_OSX
 		nfd2nfc = iconv_open("utf-8", "utf-8-mac");
 #endif
 	}
 
 	~CacheEnumData()
 	{
-#ifdef __APPLE__
+#ifdef OS_OSX
 		iconv_close(nfd2nfc);
 #endif
 	}
@@ -377,7 +375,7 @@ struct CacheEnumData
 	/* Converts in-place */
 	void toNFC(char *inout)
 	{
-#ifdef __APPLE__
+#ifdef OS_OSX
 		size_t srcSize = strlen(inout);
 		size_t bufSize = sizeof(buf);
 		char *bufPtr = buf;
@@ -398,8 +396,8 @@ struct CacheEnumData
 	}
 };
 
-static void cacheEnumCB(void *d, const char *origdir,
-                        const char *fname)
+static PHYSFS_EnumerateCallbackResult
+cacheEnumCB(void *d, const char *origdir, const char *fname)
 {
 	CacheEnumData &data = *static_cast<CacheEnumData*>(d);
 	char fullPath[512];
@@ -426,7 +424,7 @@ static void cacheEnumCB(void *d, const char *origdir,
 
 		/* Iterate over its contents */
 		data.fileLists.push(&list);
-		PHYSFS_enumerateFilesCallback(fullPath, cacheEnumCB, d);
+		PHYSFS_enumerate(fullPath, cacheEnumCB, d);
 		data.fileLists.pop();
 	}
 	else
@@ -441,13 +439,15 @@ static void cacheEnumCB(void *d, const char *origdir,
 		/* Add the lower -> mixed mapping of the file's full path */
 		data.p->pathCache.insert(lowerCase, mixedCase);
 	}
+
+	return PHYSFS_ENUM_OK;
 }
 
 void FileSystem::createPathCache()
 {
 	CacheEnumData data(p);
 	data.fileLists.push(&p->fileLists[""]);
-	PHYSFS_enumerateFilesCallback("", cacheEnumCB, &data);
+	PHYSFS_enumerate("", cacheEnumCB, &data);
 
 	p->havePathCache = true;
 }
@@ -458,8 +458,8 @@ struct FontSetsCBData
 	SharedFontState *sfs;
 };
 
-static void fontSetEnumCB(void *data, const char *,
-                          const char *fname)
+static PHYSFS_EnumerateCallbackResult
+fontSetEnumCB (void *data, const char *dir, const char *fname)
 {
 	FontSetsCBData *d = static_cast<FontSetsCBData*>(data);
 
@@ -467,7 +467,7 @@ static void fontSetEnumCB(void *data, const char *,
 	const char *ext = findExt(fname);
 
 	if (!ext)
-		return;
+		return PHYSFS_ENUM_OK;
 
 	char lowExt[8];
 	size_t i;
@@ -477,15 +477,15 @@ static void fontSetEnumCB(void *data, const char *,
 	lowExt[i] = '\0';
 
 	if (strcmp(lowExt, "ttf") && strcmp(lowExt, "otf") && strcmp(lowExt, "ttc"))
-		return;
+		return PHYSFS_ENUM_OK;
 
 	char filename[512];
-	snprintf(filename, sizeof(filename), "Fonts/%s", fname);
+	snprintf(filename, sizeof(filename), "%s/%s", dir, fname);
 
 	PHYSFS_File *handle = PHYSFS_openRead(filename);
 
 	if (!handle)
-		return;
+		return PHYSFS_ENUM_ERROR;
 
 	SDL_RWops ops;
 	initReadOps(handle, ops, false);
@@ -493,13 +493,15 @@ static void fontSetEnumCB(void *data, const char *,
 	d->sfs->initFontSetCB(ops, filename);
 
 	SDL_RWclose(&ops);
+
+	return PHYSFS_ENUM_OK;
 }
 
 void FileSystem::initFontSets(SharedFontState &sfs)
 {
 	FontSetsCBData d = { p, &sfs };
 
-	PHYSFS_enumerateFilesCallback("Fonts", fontSetEnumCB, &d);
+	PHYSFS_enumerate("Fonts", fontSetEnumCB, &d);
 }
 
 struct OpenReadEnumData
@@ -532,19 +534,19 @@ struct OpenReadEnumData
 	{}
 };
 
-static void openReadEnumCB(void *d, const char *dirpath,
-                           const char *filename)
+static PHYSFS_EnumerateCallbackResult
+openReadEnumCB(void *d, const char *dirpath, const char *filename)
 {
 	OpenReadEnumData &data = *static_cast<OpenReadEnumData*>(d);
 	char buffer[512];
 	const char *fullPath;
 
 	if (data.stopSearching)
-		return;
+		return PHYSFS_ENUM_STOP;
 
 	/* If there's not even a partial match, continue searching */
 	if (strncmp(filename, data.filename, data.filenameN) != 0)
-		return;
+		return PHYSFS_ENUM_OK;
 
 	if (!*dirpath)
 	{
@@ -562,7 +564,7 @@ static void openReadEnumCB(void *d, const char *dirpath,
 	 * of the extension), or up to a following '\0' (full match), we've
 	 * found our file */
 	if (last != '.' && last != '\0')
-		return;
+		return PHYSFS_ENUM_STOP;
 
 	/* If the path cache is active, translate from lower case
 	 * to mixed case path */
@@ -577,9 +579,9 @@ static void openReadEnumCB(void *d, const char *dirpath,
 		 * be a deeper rooted problem somewhere within PhysFS.
 		 * Just abort alltogether. */
 		data.stopSearching = true;
-		data.physfsError = PHYSFS_getLastError();
+		data.physfsError = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
 
-		return;
+		return PHYSFS_ENUM_ERROR;
 	}
 
 	initReadOps(phys, data.ops, false);
@@ -590,6 +592,7 @@ static void openReadEnumCB(void *d, const char *dirpath,
 		data.stopSearching = true;
 
 	++data.matchCount;
+	return PHYSFS_ENUM_OK;
 }
 
 void FileSystem::openRead(OpenHandler &handler, const char *filename)
@@ -635,7 +638,7 @@ void FileSystem::openRead(OpenHandler &handler, const char *filename)
 	}
 	else
 	{
-		PHYSFS_enumerateFilesCallback(dir, openReadEnumCB, &data);
+		PHYSFS_enumerate(dir, openReadEnumCB, &data);
 	}
 
 	if (data.physfsError)

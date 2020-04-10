@@ -12,6 +12,7 @@ class Window_Message < Window_Selectable
   def initialize
     super(16, 336, 608, 128)
     self.contents = Bitmap.new(width - 32, height - 32)
+    Language.register_text_sprite(self.class.name + "_contents", self.contents)
     self.visible = false
     self.z = 9999
     self.back_opacity = 210
@@ -100,7 +101,12 @@ class Window_Message < Window_Selectable
       text.gsub!(/\\v\[([0-9]+)\]/) do
         $game_variables[$1.to_i]
       end
-      text.gsub!("\\p", $game_oneshot.player_name)
+	  #add a space to the beginning of the player name to better deal with longer names in asian languages
+	  if (Language::FONT_WESTERN == Font.default_name)
+        text.gsub!("\\p", $game_oneshot.player_name)
+      else
+        text.gsub!("\\p", " " + $game_oneshot.player_name)
+      end
       text.gsub!("\\n", "\n")
       # Handle text-rendering escape sequences
       text.gsub!(/\\c\[([0-9]+)\]/, "\0[\\1]")
@@ -232,12 +238,7 @@ class Window_Message < Window_Selectable
       end
       if c == "\003"
         # new facepic
-        face_name = ""
-        c2 = @text.slice!(0)
-        while c2 != " "
-          face_name += c2
-          c2 = @text.slice!(0)
-        end
+        face_name = @text.slice!(/^[^\s]+ */).strip()
         self.contents.fill_rect(self.contents.width - 96, 0, 96, 96, Color.new(0,0,0,0))
         $game_temp.message_face = face_name
 		if $game_player.character_name == "niko_gasmask" || $game_player.character_name == "niko_bulb_gasmask" \
@@ -382,14 +383,22 @@ class Window_Message < Window_Selectable
         @text_pause -= 1
       else
         if @blip >= BLIP_TIME
-          Audio.se_play("Audio/SE/#{@blipsound}.wav", 50) unless @text.empty?
+		  #april fools
+		  t = Time.now
+	      if $game_temp.message_face != nil && t.month == 4 && t.day == 1 && $game_temp.message_face.start_with?("niko")
+		    niko_sounds = [ "cat_2"]
+			@blipsound = niko_sounds[rand(niko_sounds.length)]
+            Audio.se_play("Audio/SE/#{@blipsound}.wav", 50, rand(100..125)) unless @text.empty?
+	      else
+            Audio.se_play("Audio/SE/#{@blipsound}.wav", 50) unless @text.empty?
+		  end
           @blip = 0
         else
           @blip += 1
         end
         tick
       end
-      if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL)
+      if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL) || (Input.press?(Input::R) && $game_switches[253])
         @skip_text = true
       end
     else
@@ -400,10 +409,7 @@ class Window_Message < Window_Selectable
           $game_system.se_play($data_system.cancel_se)
           $game_temp.choice_proc.call($game_temp.choice_cancel_type - 1)
           terminate_message
-        end
-
-        # Confirm
-        if Input.trigger?(Input::ACTION)
+        elsif Input.trigger?(Input::ACTION)
           $game_system.se_play($data_system.decision_se)
           $game_temp.choice_proc.call(self.index)
           terminate_message
@@ -428,7 +434,7 @@ class Window_Message < Window_Selectable
         self.pause = true
 
         # Advance/Close message
-        if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL)
+        if Input.trigger?(Input::ACTION) || Input.trigger?(Input::CANCEL) || (Input.press?(Input::R) && $game_switches[253])
           if @text.length <= 0
             terminate_message
           else

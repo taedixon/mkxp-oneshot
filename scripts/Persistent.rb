@@ -24,6 +24,9 @@ class Persistent
 
   def initialize
     self.lang = LanguageCode.new(Steam::LANG || Oneshot::LANG)
+	if File.exists?("zh_CN.ver")
+	  self.lang = LanguageCode.new("zh_CN")
+	end
   end
 
   # Members
@@ -38,6 +41,10 @@ class Persistent
     end
     Language.set(@lang)
   end
+  
+  def langcode
+  	self.lang.full.to_s
+  end
 
   # MARSHAL
   def marshal_dump
@@ -49,7 +56,7 @@ class Persistent
 
   # Save/Load global instance of persistent
   FILE_NAME = Oneshot::SAVE_PATH + '/persistent.dat'
-  def self.save
+  def save
     File.open(FILE_NAME, 'wb') do |file|
       Marshal.dump($persistent, file)
     end

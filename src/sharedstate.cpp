@@ -41,7 +41,9 @@
 #include "binding.h"
 #include "exception.h"
 
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <string>
 
@@ -94,7 +96,7 @@ struct SharedStatePrivate
 	SharedStatePrivate(RGSSThreadData *threadData)
 	    : bindingData(0),
 	      sdlWindow(threadData->window),
-	      fileSystem(threadData->argv0, threadData->config.allowSymlinks),
+	      fileSystem(threadData->config.allowSymlinks),
 	      eThread(*threadData->ethread),
 	      rtData(*threadData),
 	      config(threadData->config),
@@ -102,6 +104,7 @@ struct SharedStatePrivate
 	      input(*threadData),
 	      audio(*threadData),
 	      oneshot(*threadData),
+	      _glState(threadData->config),
 	      fontState(threadData->config),
 	      stampCounter(0)
 	{

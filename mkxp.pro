@@ -9,7 +9,7 @@ INCLUDEPATH += . src
 CONFIG -= qt
 CONFIG += link_pkgconfig
 
-CONFIG(release, debug|release): DEFINES += NDEBUG
+CONFIG(release, debug|release): DEFINES += NDEBUG STEAM
 
 isEmpty(BINDING) {
 	BINDING = MRI
@@ -24,15 +24,6 @@ contains(BINDING, MRI) {
 	CONFIG += BINDING_MRI
 }
 
-contains(BINDING, MRUBY) {
-	contains(_HAVE_BINDING, YES) {
-		error("Only one binding may be selected")
-	}
-	_HAVE_BINDING = YES
-
-	CONFIG += BINDING_MRUBY
-}
-
 contains(BINDING, NULL) {
 	contains(_HAVE_BINDING, YES) {
 		error("Only one binding may be selected")
@@ -42,21 +33,28 @@ contains(BINDING, NULL) {
 	CONFIG += BINDING_NULL
 }
 
+PKGCONFIG = sigc++-2.0 pixman-1 zlib sdl2 SDL2_image SDL2_ttf openal SDL_sound vorbisfile
+
 unix {
 	CONFIG += c++11
-	PKGCONFIG += sigc++-2.0 pixman-1 vorbisfile \
-                 sdl2 SDL2_image SDL2_ttf SDL_sound physfs
-    LIBS += -ldl
+	PKGCONFIG += physfs
+	LIBS += -ldl
 	macx: {
-		CONFIG -= app_bundle
-		INCLUDEPATH += $$QMAKE_MAC_SDK_PATH/System/Library/Frameworks/OpenAL.framework/Versions/A/Headers
-		LIBS += -framework OpenAL
+		INCLUDEPATH += $$QMAKE_MAC_SDK_PATH/System/Library/Frameworks/OpenAL.framework/Versions/A/Headers /usr/local/include
+		LIBS += -framework OpenAL -framework AppKit
+		QMAKE_LFLAGS += -L/usr/local/lib -L/usr/local/opt/ruby/lib -L/usr/local/opt/openal-soft/lib
+		HEADERS += src/mac-desktop.h
+		SOURCES += src/mac-desktop.mm
 	}
 	!macx: {
-		PKGCONFIG += openal zlib
+		CONFIG(debug, debug|release) {
+			QMAKE_CXXFLAGS += -g
+		}
+		PKGCONFIG += gtk+-3.0 gdk-3.0 libxfconf-0
 		INCLUDEPATH += /usr/include/AL /usr/local/include/AL
-		SOURCES += src/xdg-user-dir-lookup.c
 		LIBS += -lX11
+		QMAKE_LFLAGS += "-Wl,-rpath,\'\$$ORIGIN\'"
+		QMAKE_LFLAGS += -no-pie
 	}
 }
 
@@ -64,8 +62,7 @@ win32 {
 	QMAKE_CXXFLAGS += -std=gnu++11
 	QMAKE_LFLAGS += -std=gnu++11
 
-	PKGCONFIG += sigc++-2.0 pixman-1 zlib \
-	             sdl2 SDL2_image SDL2_ttf openal SDL_sound vorbisfile freetype2
+	PKGCONFIG += freetype2
 	LIBS += -lphysfs -lsecur32 -lwinmm
 
 	release {
@@ -95,10 +92,6 @@ isEmpty(BOOST_LIB_SUFFIX) {
 }
 
 LIBS += -lboost_program_options$$BOOST_LIB_SUFFIX
-
-STEAM {
-	DEFINES += STEAM
-}
 
 # Input
 HEADERS += \
@@ -156,7 +149,12 @@ HEADERS += \
 	src/rgssad.h \
 	src/sdl-util.h \
 	src/oneshot.h \
-	src/pipe.h
+	src/pipe.h \
+	chromasdk/RzChromaSDKDefines.h \
+	chromasdk/RzChromaSDKTypes.h \
+	chromasdk/RzErrors.h \
+	chromasdk/ChromaApi.h \
+	src/i18n.h
 
 SOURCES += \
 	src/main.cpp \
@@ -197,11 +195,18 @@ SOURCES += \
 	src/vorbissource.cpp \
 	src/oneshot.cpp \
 	src/screen.cpp \
-    binding-mri/journal-binding.cpp
+	src/i18n.cpp
 
-STEAM {
+CONFIG(release, debug|release): {
 	HEADERS += src/steam.h steamshim/steamshim_child.h
 	SOURCES += src/steam.cpp steamshim/steamshim_child.c
+}
+
+unix {
+	!macx {
+		HEADERS += src/xdg-user-dir-lookup.h
+		SOURCES += src/xdg-user-dir-lookup.c
+	}
 }
 
 EMBED = \
@@ -251,8 +256,15 @@ BINDING_NULL {
 }
 
 BINDING_MRI {
+	MRIVERSION = $$(MRIVERSION)
 	isEmpty(MRIVERSION) {
-		MRIVERSION = 2.2
+		MRIVERSION = 2.5
+		unix {
+			!macx {
+				# Issues with compiling on Ubuntu with Ruby 2.4+.
+				MRIVERSION = 2.3
+			}
+		}
 	}
 
 	PKGCONFIG += ruby-$$MRIVERSION
@@ -295,6 +307,8 @@ BINDING_MRI {
 	binding-mri/oneshot-binding.cpp \
 	binding-mri/steam-binding.cpp \
 	binding-mri/wallpaper-binding.cpp \
+	binding-mri/journal-binding.cpp \
+	binding-mri/chroma-binding.cpp \
 	binding-mri/niko-binding.cpp
 }
 

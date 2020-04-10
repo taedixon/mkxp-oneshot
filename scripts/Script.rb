@@ -2,6 +2,8 @@ PROTO_TEXT = "put me in the big portal"
 CEDRIC_TEXT = "put me in the big portal"
 RUE_TEXT = "put me in the big portal"
 
+SUPPORTED_DE = ["cinnamon", "gnome", "mate", "kde", "xfce"]
+
 module Script
   def self.px
     logpos($game_player.x, $game_player.real_x, $game_player.direction == 6)
@@ -140,7 +142,7 @@ module Script
 	end
 	return false
   end
-  
+
   def self.countdown_extend_over
     equinox = Time.new(2017, 03, 27)
 	diff = equinox - Time.now
@@ -149,7 +151,7 @@ module Script
 	end
 	return false
   end
-  
+
   def self.cdown_update(equinox)
     diff = equinox - Time.now
 	if(diff < 0)
@@ -217,7 +219,7 @@ module Script
   def self.countdown_update
     return cdown_update(Time.new(2017, 03, 27))
   end
-  
+
   def self.countdown_extend_update
     return cdown_update(Time.new(2017, 03, 27))
   end
@@ -254,7 +256,7 @@ module Script
       end
     end
   end
-  
+
   def self.niko_reflection_enc_update
     for event in $game_map.events.values
       if event.name == "niko reflection"
@@ -268,7 +270,7 @@ module Script
         if event.real_y > 19*128
           event.real_y = 19*128
         end
-		
+
         if event.x > 14
           event.x = 14
         elsif event.x < 6
@@ -279,7 +281,7 @@ module Script
         elsif event.real_x < (6*128) + 32
           event.real_x = (6*128) + 32
         end
-		
+
         event.direction = $game_player.direction
         event.pattern = $game_player.pattern
         case event.direction
@@ -292,8 +294,8 @@ module Script
       end
     end
   end
-  
-  
+
+
   def self.niko_reflection_peng_update
     for event in $game_map.events.values
       if event.name == "niko reflection"
@@ -307,7 +309,7 @@ module Script
         if event.real_y > 19*128
           event.real_y = 19*128
         end
-		
+
         if event.x > 14
           event.x = 14
         elsif event.x < 6
@@ -318,7 +320,7 @@ module Script
         elsif event.real_x < (6*128) + 32
           event.real_x = (6*128) + 32
         end
-		
+
         return
       end
     end
@@ -373,66 +375,89 @@ module Script
   end
 
   def self.copy_journal
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot")
-	begin
-      File.open("_______.exe", "rb") do |input|
-        File.open(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\_______.exe","wb") do |output|
-          while buff = input.read(4096)
-            output.write(buff)
+    # If the required directories don't exist, create them
+    Dir.mkdir(Oneshot::GAME_PATH) unless File.exists?(Oneshot::GAME_PATH)
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot")
+    begin
+      # If we're on a supported Linux DE, make a .desktop file
+      # so the clover icon can be properly shown
+      if Oneshot::OS == "linux" and SUPPORTED_DE.include? Oneshot::DE
+        path = "#{Oneshot::GAME_PATH}/Oneshot/#{Oneshot::JOURNAL}.desktop"
+        File.open(path, "wb") do |output|
+          output.write("[Desktop Entry]\n")
+          output.write("Comment=...\n")
+          output.write("Terminal=false\n")
+          output.write("Name=_______\n")
+          output.write("Exec=#{Dir.pwd}/#{Oneshot::JOURNAL}\n")
+          output.write("Type=Application\n")
+          output.write("Icon=#{Dir.pwd}/images/icon.png\n")
+        end
+        File.chmod(0777, path)
+      # If the journal is a file, copy it to Documents
+      elsif File.file?(Oneshot::JOURNAL)
+        File.open(Oneshot::JOURNAL, "rb") do |input|
+          File.open("#{Oneshot::GAME_PATH}/Oneshot/#{Oneshot::JOURNAL}", "wb") do |output|
+            while buff = input.read(4096)
+              output.write(buff)
+            end
           end
         end
+      # If the journal isn't a file, symlink it
+      else
+        File.symlink "#{Dir.pwd}/#{Oneshot::JOURNAL}", "#{Oneshot::GAME_PATH}/Oneshot/#{Oneshot::JOURNAL}"
       end
-	rescue Errno::EACCES => e
-	  #this probably means the clover.exe already exists and is running, so no need to create it again
-	end
-	if File.exists?("README.txt")
+    rescue Errno::EACCES => e
+      # this probably means the clover.exe already exists and is running, so no need to create it again
+    rescue Errno::EEXIST => e
+      # this means that the journal file already exists, so no need to create it again
+    end
+    if File.exists?("README.txt")
       File.open("README.txt", "rb") do |input|
-        File.open(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\README.txt","wb") do |output|
+        File.open(Oneshot::GAME_PATH + "/Oneshot/README.txt","wb") do |output|
           while buff = input.read(4096)
             output.write(buff)
           end
         end
       end
-	end
+    end
   end
-  
+
   def self.create_boxes
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal1") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal1")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal2") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal2")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal3") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal3")
-    Dir.mkdir(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal") unless File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal")
+    Dir.mkdir(Oneshot::GAME_PATH) unless File.exists?(Oneshot::GAME_PATH)
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot")
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot/Portal1") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot/Portal1")
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot/Portal2") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot/Portal2")
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot/Portal3") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot/Portal3")
+    Dir.mkdir(Oneshot::GAME_PATH + "/Oneshot/BigPortal") unless File.exists?(Oneshot::GAME_PATH + "/Oneshot/BigPortal")
   end
-  
+
   def self.delete_if_exists(f_name)
     File.delete(f_name) unless !File.exists?(f_name)
   end
-  
+
   def self.clear_boxes
     for i in 1..3
-	  portal_path = Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal" + i.to_s
+	  portal_path = Oneshot::GAME_PATH + "/Oneshot/Portal" + i.to_s
 	  case i
 	  when 1
-	    delete_if_exists(portal_path + "\\blue_npc_prototype.png")
-	    delete_if_exists(portal_path + "\\proto1.png")
-	    delete_if_exists(portal_path + "\\keyB.txt")
+	    delete_if_exists(portal_path + "/blue_npc_prototype.png")
+	    delete_if_exists(portal_path + "/proto1.png")
+	    delete_if_exists(portal_path + "/keyB.txt")
 	  when 2
-	    delete_if_exists(portal_path + "\\green_npc_cedric.png")
-	    delete_if_exists(portal_path + "\\cedric.png")
-	    delete_if_exists(portal_path + "\\keyG.txt")
+	    delete_if_exists(portal_path + "/green_npc_cedric.png")
+	    delete_if_exists(portal_path + "/cedric.png")
+	    delete_if_exists(portal_path + "/keyG.txt")
 	  when 3
-	    delete_if_exists(portal_path + "\\red_rue.png")
-	    delete_if_exists(portal_path + "\\rue.png")
-	    delete_if_exists(portal_path + "\\keyR.txt")
+	    delete_if_exists(portal_path + "/red_rue.png")
+	    delete_if_exists(portal_path + "/rue.png")
+	    delete_if_exists(portal_path + "/keyR.txt")
 	  end
 	end
-	delete_if_exists(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal\\keyB.txt")
-	delete_if_exists(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal\\keyG.txt")
-	delete_if_exists(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal\\keyR.txt")
+	delete_if_exists(Oneshot::GAME_PATH + "/Oneshot/BigPortal/keyB.txt")
+	delete_if_exists(Oneshot::GAME_PATH + "/Oneshot/BigPortal/keyG.txt")
+	delete_if_exists(Oneshot::GAME_PATH + "/Oneshot/BigPortal/keyR.txt")
   end
-  
+
   def self.copy_file(src, dst)
     begin
       File.open(src, "rb") do |input|
@@ -444,81 +469,95 @@ module Script
       end
 	rescue Errno::EACCES => e
 	  #this probably means the file already exists and is open, so no need to create it again
+  rescue Errno::EEXIST => e
+    #this probably means the file already exists, so no need to create it again
 	end
   end
-  
+
   def self.write_key(dst, str)
     File.open(dst, 'w') do |file|
       file.puts(str)
     end
   end
-  
+
   def self.put_key_in_box(numb)
-    portal_path = Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal" + numb.to_s
+    portal_path = Oneshot::GAME_PATH + "/Oneshot/Portal" + numb.to_s
 	case numb
 	when 1
-	  copy_file("Graphics\\Characters\\blue_npc_prototype.png", portal_path + "\\blue_npc_prototype.png")
-	  copy_file("Graphics\\Faces\\proto1.png", portal_path + "\\proto1.png")
-	  write_key(portal_path + "\\keyB.txt", PROTO_TEXT)
+	  copy_file("Graphics/Characters/blue_npc_prototype.png", portal_path + "/blue_npc_prototype.png")
+	  copy_file("Graphics/Faces/proto1.png", portal_path + "/proto1.png")
+	  write_key(portal_path + "/keyB.txt", tr(PROTO_TEXT))
 	when 2
-	  copy_file("Graphics\\Characters\\green_npc_cedric.png", portal_path + "\\green_npc_cedric.png")
-	  copy_file("Graphics\\Faces\\cedric.png", portal_path + "\\cedric.png")
-	  write_key(portal_path + "\\keyG.txt", CEDRIC_TEXT)
+	  copy_file("Graphics/Characters/green_npc_cedric.png", portal_path + "/green_npc_cedric.png")
+	  copy_file("Graphics/Faces/cedric.png", portal_path + "/cedric.png")
+	  write_key(portal_path + "/keyG.txt", tr(CEDRIC_TEXT))
 	when 3
-	  copy_file("Graphics\\Characters\\red_rue.png", portal_path + "\\red_rue.png")
-	  copy_file("Graphics\\Faces\\rue.png", portal_path + "\\rue.png")
-	  write_key(portal_path + "\\keyR.txt", RUE_TEXT)
+	  copy_file("Graphics/Characters/red_rue.png", portal_path + "/red_rue.png")
+	  copy_file("Graphics/Faces/rue.png", portal_path + "/rue.png")
+	  write_key(portal_path + "/keyR.txt", tr(RUE_TEXT))
 	end
-	  
+
   end
-  
+
   def self.password1
-    copy_file("Graphics\\Fogs\\_\\scenario1\\pw1.png", Oneshot::DOCS_PATH + "\\ONESHOT_password1.png")
-    copy_file("Graphics\\Fogs\\_\\scenario1\\pw2.png", Oneshot::DOCS_PATH + "\\ONESHOT_password2.png")
-    copy_file("Graphics\\Fogs\\_\\scenario1\\pw3.png", Oneshot::DOCS_PATH + "\\ONESHOT_password3.png")
-    copy_file("Graphics\\Fogs\\_\\scenario1\\pw4.png", Oneshot::DOCS_PATH + "\\ONESHOT_password4.png")
+    locale = $persistent.langcode
+	if !Language::LANGUAGES.include? locale
+	  locale = 'en'
+	end
+    source_dir = "Graphics/Fogs/_/scenario1/" + locale.downcase
+    Dir.mkdir(Oneshot::DOCS_PATH) unless File.exists?(Oneshot::DOCS_PATH)
+    copy_file(source_dir + "/pw1.png", Oneshot::DOCS_PATH + "/ONESHOT_password1.png")
+    copy_file(source_dir + "/pw2.png", Oneshot::DOCS_PATH + "/ONESHOT_password2.png")
+    copy_file(source_dir + "/pw3.png", Oneshot::DOCS_PATH + "/ONESHOT_password3.png")
+    copy_file(source_dir + "/pw4.png", Oneshot::DOCS_PATH + "/ONESHOT_password4.png")
   end
-  
+
   def self.password2
-    copy_file("Graphics\\Fogs\\_\\scenario2\\pw1.png", Oneshot::DOCS_PATH + "\\ONESHOT_password1.png")
-    copy_file("Graphics\\Fogs\\_\\scenario2\\pw2.png", Oneshot::DOCS_PATH + "\\ONESHOT_password2.png")
-    copy_file("Graphics\\Fogs\\_\\scenario2\\pw3.png", Oneshot::DOCS_PATH + "\\ONESHOT_password3.png")
-    copy_file("Graphics\\Fogs\\_\\scenario2\\pw4.png", Oneshot::DOCS_PATH + "\\ONESHOT_password4.png")
+    locale = $persistent.langcode
+	if !Language::LANGUAGES.include? locale
+	  locale = 'en'
+	end
+    source_dir = "Graphics/Fogs/_/scenario2/#{locale.downcase}"
+    Dir.mkdir(Oneshot::DOCS_PATH) unless File.exists?(Oneshot::DOCS_PATH)
+    copy_file("#{source_dir}/pw1.png", "#{Oneshot::DOCS_PATH}/ONESHOT_password1.png")
+    copy_file("#{source_dir}/pw2.png", "#{Oneshot::DOCS_PATH}/ONESHOT_password2.png")
+    copy_file("#{source_dir}/pw3.png", "#{Oneshot::DOCS_PATH}/ONESHOT_password3.png")
+    copy_file("#{source_dir}/pw4.png", "#{Oneshot::DOCS_PATH}/ONESHOT_password4.png")
   end
-  
+
 =begin
   def self.take_key_out_of_box(numb)
-	if File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Box" + numb.to_s + "\\key" + numb.to_s + ".png")
-      File.delete(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Box" + numb.to_s + "\\key" + numb.to_s + ".png")
+	if File.exists?(Oneshot::GAME_PATH + "/Oneshot/Box" + numb.to_s + "/key" + numb.to_s + ".png")
+      File.delete(Oneshot::GAME_PATH + "/Oneshot/Box" + numb.to_s + "/key" + numb.to_s + ".png")
 	end
-	if File.exists?(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigBox\\key" + numb.to_s + ".png")
-      File.delete(Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigBox\\key" + numb.to_s + ".png")
+	if File.exists?(Oneshot::GAME_PATH + "/Oneshot/BigBox/key" + numb.to_s + ".png")
+      File.delete(Oneshot::GAME_PATH + "/Oneshot/BigBox/key" + numb.to_s + ".png")
 	end
   end
 =end
-  
+
   def self.is_key_in_box(numb)
-    portal_path = Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\Portal" + numb.to_s
+    portal_path = Oneshot::GAME_PATH + "/Oneshot/Portal" + numb.to_s
 	case numb
 	when 1
-	  return File.exists?(portal_path + "\\keyB.txt")
+	  return File.exists?(portal_path + "/keyB.txt")
 	when 2
-	  return File.exists?(portal_path + "\\keyG.txt")
+	  return File.exists?(portal_path + "/keyG.txt")
 	when 3
-	  return File.exists?(portal_path + "\\keyR.txt")
+	  return File.exists?(portal_path + "/keyR.txt")
 	end
     return false
   end
-  
+
   def self.is_key_in_bigbox(numb)
-    portal_path = Oneshot::DOCS_PATH + "\\My Games\\Oneshot\\BigPortal"
+    portal_path = Oneshot::GAME_PATH + "/Oneshot/BigPortal"
 	case numb
 	when 1
-	  return File.exists?(portal_path + "\\keyB.txt")
+	  return File.exists?(portal_path + "/keyB.txt")
 	when 2
-	  return File.exists?(portal_path + "\\keyG.txt")
+	  return File.exists?(portal_path + "/keyG.txt")
 	when 3
-	  return File.exists?(portal_path + "\\keyR.txt")
+	  return File.exists?(portal_path + "/keyR.txt")
 	end
     return false
   end
@@ -556,6 +595,77 @@ def check_exit(min, max, x: -1, y: -1)
     end
   end
   Script.tmp_s1 = $game_switches[11] ? false : result
+end
+
+def loadQASave(fname)
+  filename = "testing_saves/" + fname + ".rxdata"
+    # If file doesn't exist
+    unless FileTest.exist?(filename)
+      filename = "testing_saves_postgame/" + fname + ".rxdata"
+	  unless FileTest.exist?(filename)
+        # Play buzzer SE
+        $game_system.se_play($data_system.buzzer_se)
+        return
+      end
+    end
+    # Play load SE
+    $game_system.se_play($data_system.load_se)
+
+	# Read save data
+    file = File.open(filename, "rb")
+    # Read character data for drawing save file
+    characters = Marshal.load(file)
+    # Read frame count for measuring play time
+    Graphics.frame_count = Marshal.load(file)
+    # Read each type of game object
+    $game_system        = Marshal.load(file)
+    $game_switches      = Marshal.load(file)
+    $game_variables     = Marshal.load(file)
+    $game_self_switches = Marshal.load(file)
+    $game_screen        = Marshal.load(file)
+    $game_actors        = Marshal.load(file)
+    $game_party         = Marshal.load(file)
+    $game_troop         = Marshal.load(file)
+    $game_map           = Marshal.load(file)
+    $game_player        = Marshal.load(file)
+    $game_followers     = Marshal.load(file)
+    $game_oneshot       = Marshal.load(file)
+    $game_fasttravel    = Marshal.load(file)
+	  $game_temp.footstep_sfx = Marshal.load(file)
+
+    # If magic number is different from when saving
+    # (if editing was added with editor)
+    if $game_system.magic_number != $data_system.magic_number
+      # Load map
+      $game_map.setup($game_map.map_id)
+      $game_player.center($game_player.x, $game_player.y)
+    end
+    # Refresh party members
+    $game_party.refresh
+
+	f_prev = $game_player
+    for f in $game_followers
+      f.leader = f_prev
+      f.moveto($game_player.x, $game_player.y)
+	  f_prev = f
+    end
+    file.close
+    # Restore BGM and BGS
+    $game_system.bgm_play($game_system.playing_bgm)
+    $game_system.bgs_play($game_system.playing_bgs)
+    # Update map (run parallel process event)
+    $game_map.update
+    # Switch to map screen
+    $scene = Scene_Map.new
+end
+
+def kill_perma_flags
+  for i in 151..175
+    $game_switches[i] = false
+  end
+  for i in 76..100
+    $game_variables[i] = 0
+  end
 end
 
 def bg(name)
@@ -656,6 +766,9 @@ def plight_start_timer
 end
 
 def plight_update_timer
+  if $game_oneshot.plight_timer == nil
+    plight_start_timer
+  end
   Script.tmp_v1 = ((Time.now - $game_oneshot.plight_timer) / 60).to_i
 end
 
