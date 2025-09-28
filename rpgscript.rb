@@ -16,25 +16,29 @@ else
   extract = false
 end
 
-# Determine version of game engine
-game_data_dir = File.join(game_dir, 'Data')
-unless Dir.exist? game_data_dir
-  STDERR.puts "error: #{game_dir} does not have a Data subdirectory"
-  exit 1
-end
-
-target_path = nil
-Dir.entries(game_data_dir).each do |e|
-  ext = File.extname(e)
-  if ext =~ /\.r[xv]data2?/
-    target_path = File.join(game_data_dir, 'xScripts' + ext)
-    break
+unless game_dir.end_with?(".rxdata")
+  # Determine version of game engine
+  game_data_dir = File.join(game_dir, 'Data')
+  unless Dir.exist? game_data_dir
+    STDERR.puts "error: #{game_dir} does not have a Data subdirectory"
+    exit 1
   end
-end
 
-unless target_path
-  STDERR.puts "warning: could not determine game engine version, assuming XP"
-  target_path = File.join(game_data_dir, 'xScripts.rxdata')
+  target_path = nil
+  Dir.entries(game_data_dir).each do |e|
+    ext = File.extname(e)
+    if ext =~ /\.r[xv]data2?/
+      target_path = File.join(game_data_dir, 'xScripts' + ext)
+      break
+    end
+  end
+
+  unless target_path
+    STDERR.puts "warning: could not determine game engine version, assuming XP"
+    target_path = File.join(game_data_dir, 'xScripts.rxdata')
+  end
+else
+  target_path = game_dir
 end
 
 # Generate path of script list
