@@ -31,8 +31,6 @@
 #include <string>
 #include <utility>
 
-#include <SDL_ttf.h>
-
 typedef std::pair<std::string, int> FontKey;
 
 struct FontSet
@@ -109,7 +107,7 @@ void SharedFontState::initFontSetCB(SDL_RWops &ops,
 		set.other = filename;
 }
 
-_TTF_Font *SharedFontState::getFont(std::string family,
+TTF_Font *SharedFontState::getFont(std::string family,
                                     int size)
 {
 	/* Check for substitutions */
@@ -410,7 +408,7 @@ void Font::initDefaults(const SharedFontState &sfs)
 	FontPrivate::defaultShadow  = (rgssVer == 2 ? true : false);
 }
 
-_TTF_Font *Font::getSdlFont()
+TTF_Font *Font::getSdlFont()
 {
 	if (!p->sdlFont)
 		p->sdlFont = shState->fontState().getFont(p->name.c_str(),

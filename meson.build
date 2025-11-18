@@ -18,6 +18,7 @@ compilers = {
 }
 
 do_xxd = files('do_xxd.sh')
+bash = find_program('bash')
 ruby = find_program('ruby', native: true)
 
 global_sources = []
@@ -65,6 +66,8 @@ if compilers['cpp'].get_id() == 'clang'
 endif
 
 if host_system == 'windows'
+	# Force usage of wchar syscalls in windows/mingw builds
+	global_args += '-DUNICODE'
     # Win32 Subsystem and Operating System version
     # (default: 6.00 - Windows Vista/7 and higher)
     winnt_ver_args = [
@@ -133,18 +136,3 @@ executable(
     win_subsystem: 'windows',
     install: (host_system != 'windows')
 )
-
-# ModShot Shim for Windows
-if host_system == 'windows'
-    executable(
-        meson.project_name() + '-shim',
-        sources: [
-            'windows/shim.c',
-            windows_resources
-        ],
-        link_args: [
-            winnt_ver_args
-        ],
-        win_subsystem: 'windows'
-    )
-endif

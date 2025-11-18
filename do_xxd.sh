@@ -1,3 +1,4 @@
+#!/bin/bash
 
 run_dir="$1"
 asset_dir="$2"

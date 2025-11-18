@@ -34,7 +34,7 @@ foreach file : embedded_shaders_f
         input: file,
         output: '@0@.xxd'.format(shaders_src[count]),
         command: [
-            do_xxd, '@SOURCE_ROOT@', '@OUTDIR@', '@PLAINNAME@', '@OUTPUT@'
+            bash, do_xxd, '@SOURCE_ROOT@', '@OUTDIR@', '@PLAINNAME@', '@OUTPUT@'
         ],
         depend_files: embedded_shaders_f[count]
         )

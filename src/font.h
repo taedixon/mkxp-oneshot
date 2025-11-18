@@ -28,8 +28,9 @@
 #include <vector>
 #include <string>
 
+#include <SDL_ttf.h>
+
 struct SDL_RWops;
-struct _TTF_Font;
 struct Config;
 
 struct SharedFontStatePrivate;
@@ -47,7 +48,7 @@ public:
 	void initFontSetCB(SDL_RWops &ops,
 	                   const std::string &filename);
 
-	_TTF_Font *getFont(std::string family,
+	TTF_Font *getFont(std::string family,
 	                   int size);
 
 	bool fontPresent(std::string family) const;
@@ -110,7 +111,7 @@ public:
 	static void initDefaults(const SharedFontState &sfs);
 
 	/* internal */
-	_TTF_Font *getSdlFont();
+	TTF_Font *getSdlFont();
 
 private:
 	FontPrivate *p;

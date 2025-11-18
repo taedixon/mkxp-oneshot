@@ -15,6 +15,7 @@
 *.tlog
 
 .vs/
+.vscode/
 bin/
 lib/
 *.dir/
