@@ -170,7 +170,11 @@ RB_METHOD(kernelSaveData)
 	return Qnil;
 }
 
+#if RUBY_API_TRIPLET < 270
 static VALUE stringForceUTF8(VALUE arg)
+#else
+static VALUE stringForceUTF8(RB_BLOCK_CALL_FUNC_ARGLIST(arg, callback_arg))
+#endif
 {
 	if (RB_TYPE_P(arg, RUBY_T_STRING) && ENCODING_IS_ASCII8BIT(arg))
 		rb_enc_associate_index(arg, rb_utf8_encindex());
@@ -178,6 +182,7 @@ static VALUE stringForceUTF8(VALUE arg)
 	return arg;
 }
 
+#if RUBY_API_TRIPLET < 270
 static VALUE customProc(VALUE arg, VALUE proc)
 {
 	VALUE obj = stringForceUTF8(arg);
@@ -185,20 +190,30 @@ static VALUE customProc(VALUE arg, VALUE proc)
 
 	return obj;
 }
+#endif
 
 RB_METHOD(_marshalLoad)
 {
 	RB_UNUSED_PARAM;
 
-	VALUE port, proc = Qnil;
-
-	rb_get_args(argc, argv, "o|o", &port, &proc RB_ARG_END);
+#if RUBY_API_TRIPLET < 270
+    VALUE port, proc = Qnil;
+    rb_get_args(argc, argv, "o|o", &port, &proc RB_ARG_END);
+#else
+    VALUE port;
+    rb_get_args(argc, argv, "o", &port RB_ARG_END);
+#endif
 
 	VALUE utf8Proc;
-	if (NIL_P(proc))
-		utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(stringForceUTF8), Qnil);
-	else
-		utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(customProc), proc);
+#if RUBY_API_TRIPLET < 270
+    if (NIL_P(proc))
+
+        utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(stringForceUTF8), Qnil);
+    else
+        utf8Proc = rb_proc_new(RUBY_METHOD_FUNC(customProc), proc);
+#else
+    utf8Proc = rb_proc_new(stringForceUTF8, Qnil);
+#endif
 
 	VALUE marsh = rb_const_get(rb_cObject, rb_intern("Marshal"));
 

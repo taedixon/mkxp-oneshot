@@ -17,7 +17,6 @@ compilers = {
     'cpp': meson.get_compiler('cpp')
 }
 
-#xxd = find_program('xxd', native: true)
 do_xxd = files('do_xxd.sh')
 ruby = find_program('ruby', native: true)
 

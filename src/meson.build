@@ -32,7 +32,6 @@ if host_system == 'windows'
 else
 	global_dependencies += [
         compilers['cpp'].find_library('bz2'),
-        dependency('gtk+-2.0'),
         dependency('vorbis', version: '>=1.3.6'),
         dependency('vorbisfile'),
     ]
