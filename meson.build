@@ -19,7 +19,7 @@ compilers = {
 
 do_xxd = files('do_xxd.sh')
 bash = find_program('bash')
-ruby = find_program('ruby', native: true)
+ruby = find_program('ruby', native: true, dirs: get_option('mri_bin'))
 
 global_sources = []
 global_dependencies = []

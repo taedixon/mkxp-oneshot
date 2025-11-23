@@ -21,6 +21,8 @@ lib/
 *.dir/
 x64/
 
+.ruby-version
+
 Makefile*
 
 /oneshot
