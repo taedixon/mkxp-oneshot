@@ -10,6 +10,6 @@ const char* findtext(unsigned int msgid, const char* fallback);
 void loadLanguageMetadata();
 void unloadLanguageMetadata();
 int getFontSize();
-char* getFontName();
+const char* getFontName();
 
 #endif /* end of include guard: I18N_H */

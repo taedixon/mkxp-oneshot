@@ -1,4 +1,5 @@
 
+
 global_dependencies += [
     dependency('boost', version: '>=1.49', modules: ['program_options'], static: build_static),
     dependency('physfs', version: '>=2.1', static: build_static),
@@ -10,15 +11,9 @@ global_dependencies += [
     dependency('libpng', static: build_static),
     dependency('zlib', static: build_static),
     dependency('openal'),
-
+	dependency('vorbis', version: '>=1.3.6', static: build_static),
+	dependency('vorbisfile', static: build_static),
 ]
-
-
-            #self.requires("sqlite3/3.29.0")
-            #self.requires("flac/1.3.3")
-            #self.requires("ogg/1.3.4")
-            #self.requires("vorbis/1.3.6")
-            #self.requires("libalsa/1.1.9")
 
 fmod_arch_prefix = ''
 if host_system == 'windows'
@@ -32,8 +27,6 @@ if host_system == 'windows'
 else
 	global_dependencies += [
         compilers['cpp'].find_library('bz2'),
-        dependency('vorbis', version: '>=1.3.6'),
-        dependency('vorbisfile'),
     ]
 endif
 

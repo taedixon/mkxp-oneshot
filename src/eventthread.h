@@ -27,6 +27,8 @@
 #include "sdl-util.h"
 #include "keybindings.h"
 
+#include <alc.h>
+
 #include <SDL_scancode.h>
 #include <SDL_joystick.h>
 #include <SDL_gamecontroller.h>
@@ -38,7 +40,7 @@
 #include <stdint.h>
 
 struct RGSSThreadData;
-typedef struct ALCdevice_struct ALCdevice;
+//typedef struct ALCdevice_struct ALCdevice;
 struct SDL_Window;
 union SDL_Event;
 

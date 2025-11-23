@@ -38,7 +38,9 @@ namespace syswm {
 
 #define BUFFER_SIZE 256
 
+#ifndef _WIN32
 static SDL_Thread *thread = NULL;
+#endif
 static SDL_mutex *mutex = NULL;
 static volatile char message_buffer[BUFFER_SIZE];
 static volatile bool active = false;

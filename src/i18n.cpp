@@ -116,7 +116,6 @@ void loadLanguageMetadata() {
 	FILE* fontSizesFile = fopen("Languages/internal/language_sizes.ini", "r");
 	if (fontSizesFile) {
 		while (fgets(line, 1024, fontSizesFile)) {
-			int languageMetadataIndex = 0;
 			char* indexOfEquals = strchr(line, '=');
 			if (indexOfEquals) {
 				// splitting the string in place here
@@ -158,7 +157,7 @@ int getFontSize() {
 	return 12;
 }
 
-char* getFontName() {
+const char* getFontName() {
 	for (int i = 0; i < MAX_LANGUAGES; i++) {
 		LanguageFontAndSize* metadata = languageMetadata[i];
 		if (metadata && strcmp(currentLocale, metadata->lang_code) == 0) {

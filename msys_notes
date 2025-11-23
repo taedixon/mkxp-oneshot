@@ -1,0 +1,31 @@
+Install msys2 on windows with installer
+
+Using msys2/MINGW64 shell
+You can add an option for this in VS Code by adding this to settings.json:
+```
+"terminal.integrated.profiles.windows": {
+	"MSYS2 MINGW": {
+		"path": "cmd.exe",
+		"args": [
+			"/c",
+			"C:\\msys64\\msys2_shell.cmd -defterm -here -no-start -mingw64"
+		]
+	}
+},
+```
+
+Commands to run in msys before you can start:
+```
+pacman -S mingw64/mingw-w64-x86_64-python3
+pacman -S mingw-w64-x86_64-meson
+# Provides xxd executable
+pacman -S msys/vim
+
+pacman -S mingw-w64-x86_64-ruby mingw-w64-x86_64-gcc mingw-w64-x86_64-boost \
+	mingw-w64-x86_64-physfs \
+	mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 \
+	mingw-w64-x86_64-SDL2_ttf mingw-w64-x86_64-SDL2_image \
+	mingw-w64-x86_64-pixman mingw-w64-x86_64-libsigc++ \
+	mingw-w64-x86_64-libpng mingw-w64-x86_64-openal \
+	mingw-w64-x86_64-bzip2 mingw-w64-x86_64-libvorbis
+```

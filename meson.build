@@ -68,6 +68,11 @@ endif
 if host_system == 'windows'
 	# Force usage of wchar syscalls in windows/mingw builds
 	global_args += '-DUNICODE'
+	# Per windows:
+	#     "Math Constants are not defined in Standard C/C++. 
+	#     To use them, you must first define _USE_MATH_DEFINES 
+	#     and then include cmath or math.h."
+	global_args += '-D_USE_MATH_DEFINES'
     # Win32 Subsystem and Operating System version
     # (default: 6.00 - Windows Vista/7 and higher)
     winnt_ver_args = [
@@ -122,6 +127,14 @@ endif
 
 exe_name = meson.project_name()
 
+
+# Copy game files to the build directory
+install_subdir(
+	'oneshot',
+	install_dir: '',
+	strip_directory: true,
+)
+
 # OneShot Build
 executable(
     exe_name,
@@ -134,5 +147,5 @@ executable(
     objc_args: global_args,
     objcpp_args: global_args,
     win_subsystem: 'windows',
-    install: (host_system != 'windows')
+    install: true,
 )

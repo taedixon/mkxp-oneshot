@@ -31,7 +31,6 @@
 #include <SDL_rect.h>
 
 #include <al.h>
-#include <alc.h>
 
 #include "sharedstate.h"
 #include "graphics.h"
@@ -328,7 +327,7 @@ void EventThread::process(RGSSThreadData &rtData)
 					{
 						/* Prevent fullscreen flicker */
 						strncpy(pendingTitle, rtData.config.windowTitle.c_str(),
-						        sizeof(pendingTitle));
+						        sizeof(pendingTitle)-1);
 						break;
 					}
 
