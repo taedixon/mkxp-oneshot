@@ -1,0 +1,9 @@
+[wrap-file]
+directory = libsigc++-2.12.1
+source_url = https://github.com/libsigcplusplus/libsigcplusplus/releases/download/2.12.1/libsigc++-2.12.1.tar.xz
+source_filename = libsigc++-2.12.1.tar.xz
+source_hash = a9dbee323351d109b7aee074a9cb89ca3e7bcf8ad8edef1851f4cf359bd50843
+source_fallback_url = https://github.com/taedixon/libsigcplusplus-2-wrap/releases/download/1.0/libsigc++-2.12.1.tar.xz
+
+[provide]
+dependency_names = sigc++-2.0

@@ -11,7 +11,7 @@ foreach file : embedded_assets_f
     input: file,
     output: '@0@.xxd'.format(embedded_assets[count]),
     command: [
-        bash, do_xxd, '@SOURCE_ROOT@', '@OUTDIR@', '@PLAINNAME@', '@OUTPUT@'
+        xxd, '@INPUT@', '--symbol', 'assets_@PLAINNAME@'
     ],
     depend_files: embedded_assets_f[count]
     )

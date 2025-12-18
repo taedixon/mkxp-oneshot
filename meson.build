@@ -17,7 +17,9 @@ compilers = {
     'cpp': meson.get_compiler('cpp')
 }
 
-do_xxd = files('do_xxd.sh')
+xxd_proj = subproject('xxd+')
+xxd = xxd_proj.get_variable('xxd_binary')
+# do_xxd = files('do_xxd.sh')
 bash = find_program('bash')
 ruby = find_program('ruby', native: true, dirs: get_option('mri_bin'))
 
@@ -95,11 +97,10 @@ endif
 
 steam = get_option('steam')
 
-build_static = false
-if get_option('build_static') == true
-    if host_system == 'windows'
-        build_static = true
-    endif
+build_static = get_option('build_static')
+static_win_only = false
+if host_system == 'windows'
+	static_win_only = build_static
 endif
 
 # Project subdirectories
@@ -128,12 +129,14 @@ endif
 exe_name = meson.project_name()
 
 
-# Copy game files to the build directory
-install_subdir(
-	'oneshot',
-	install_dir: '',
-	strip_directory: true,
-)
+if get_option('copy_gamefiles')
+	# Copy game files to the build directory
+	install_subdir(
+		'oneshot',
+		install_dir: '',
+		strip_directory: true,
+	)
+endif
 
 # OneShot Build
 executable(

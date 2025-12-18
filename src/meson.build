@@ -3,16 +3,16 @@
 global_dependencies += [
     dependency('boost', version: '>=1.49', modules: ['program_options'], static: build_static),
     dependency('physfs', version: '>=2.1', static: build_static),
-    dependency('SDL2', static: build_static),
-    dependency('SDL2_ttf', static: build_static),
-    dependency('SDL2_image', static: build_static),
+    dependency('SDL2', static: static_win_only),
+    dependency('SDL2_ttf', static: static_win_only),
+    dependency('SDL2_image', static: static_win_only),
     dependency('sigc++-2.0', static: build_static),
-    dependency('pixman-1', static: build_static),
-    dependency('libpng', static: build_static),
-    dependency('zlib', static: build_static),
-    dependency('openal'),
-	dependency('vorbis', version: '>=1.3.6', static: build_static),
-	dependency('vorbisfile', static: build_static),
+    dependency('pixman-1', static: static_win_only),
+    dependency('libpng', static: static_win_only),
+    dependency('zlib', static: static_win_only),
+    dependency('openal', static: static_win_only),
+	dependency('vorbis', version: '>=1.3.6', static: static_win_only),
+	dependency('vorbisfile', static: static_win_only),
 ]
 
 fmod_arch_prefix = ''

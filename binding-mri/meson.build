@@ -17,8 +17,9 @@ endif
 
 if host_system == 'linux'
     global_dependencies += [
-        dependency('gtk+-2.0'),
+        dependency('gtk+-3.0'),
         dependency('libxfconf-0'),
+		dependency('dl'),
     ]
 endif
 

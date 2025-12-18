@@ -9,9 +9,9 @@
 #include <QDebug>
 
 static const char intro[] =
-        "extern const %1 %2[] = {\n";
+        "%1 %2[] = {\n";
 static const char outro[] =
-        "\n};\nextern const %1 %2 = %3;";
+        "\n};\n%1 %2 = %3;";
 
 int writeDump(const QString &srcFilename,
               const QString &dstFilename,
@@ -148,13 +148,13 @@ int main(int argc, char *argv[])
 		nullTerm = true;
 	}
 
-	QString outSymbol = finfo.baseName();
-	outSymbol.replace(".", "_");
+	QString outSymbol = finfo.fileName();
 
 	QString outFile;
 
 	outFile = getNamedOption(restArg, "-o", finfo.fileName() + ".xxd");
 	outSymbol = getNamedOption(restArg, "--symbol", outSymbol);
+	outSymbol.replace(".", "_");
 
 	QString dataType = stringData ? "char" : "unsigned char";
 

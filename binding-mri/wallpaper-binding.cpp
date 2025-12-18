@@ -32,6 +32,7 @@
 	#else
 		#include <gio/gio.h>
 		#include <xfconf/xfconf.h>
+		#include <dlfcn.h>
 		#include <unistd.h>
 		#include <algorithm>
 		#include <iostream>
@@ -42,6 +43,34 @@
 		static GSettings *bgsetting;
 		static std::string defPictureURI, defPictureOptions, defPrimaryColor, defColorShading;
 		// XFCE settings
+		#define LOADFUNC(XFNAME) *(void**) &ld_ ## XFNAME = dlsym(h_xfconf, #XFNAME); if (ld_ ## XFNAME == NULL) return false
+		static void* h_xfconf;
+		static gboolean (*ld_xfconf_init)(GError**error);
+		static void (*ld_xfconf_shutdown)();
+		static XfconfChannel* (*ld_xfconf_channel_get)(const gchar* channel_name);
+		static gchar* (*ld_xfconf_channel_get_string)(XfconfChannel *channel,
+                                 const gchar *property,
+                                 const gchar *default_value);
+		static gint32 (*ld_xfconf_channel_get_int)(XfconfChannel *channel,
+                              const gchar *property,
+                              gint32 default_value);
+		static gboolean (*ld_xfconf_channel_get_property)(XfconfChannel *channel,
+                                     const gchar *property,
+                                     GValue *value);
+		static gboolean (*ld_xfconf_channel_set_string)(XfconfChannel *channel,
+                                   const gchar *property,
+                                   const gchar *value);
+		static gboolean (*ld_xfconf_channel_set_int)(XfconfChannel *channel,
+                                const gchar *property,
+                                gint32 value);
+		static gboolean (*ld_xfconf_channel_set_property)(XfconfChannel *channel,
+                                     const gchar *property,
+                                     const GValue *value);
+		static void (*ld_xfconf_channel_reset_property)(XfconfChannel *channel,
+                                   const gchar *property_base,
+                                   gboolean recursive);	
+
+
 		static XfconfChannel* bgchannel;
 		static int defPictureStyle;
 		static int defColorStyle;
@@ -57,6 +86,38 @@
 #endif
 
 #ifdef __linux__
+
+	bool xfconfLibraryInit() {
+		h_xfconf = dlopen("libxfconf-0.so", RTLD_LAZY);
+		if (h_xfconf == NULL) {
+			return false;
+		}
+		LOADFUNC(xfconf_init);
+		LOADFUNC(xfconf_shutdown);
+		LOADFUNC(xfconf_channel_get);
+		LOADFUNC(xfconf_channel_get_string);
+		LOADFUNC(xfconf_channel_get_int);
+		LOADFUNC(xfconf_channel_get_property);
+		LOADFUNC(xfconf_channel_set_string);
+		LOADFUNC(xfconf_channel_set_int);
+		LOADFUNC(xfconf_channel_set_property);
+		LOADFUNC(xfconf_channel_reset_property);
+		return true;
+	}
+
+	void xfconfLibraryShutdown() {
+
+		if (desktop == "xfce") {
+			// xfconf was successfully loaded
+			ld_xfconf_shutdown();
+		}
+		if (h_xfconf != NULL) {
+			dlclose(h_xfconf);
+			h_xfconf = NULL;
+		}
+		
+	}
+
 	void desktopEnvironmentInit()
 	{
 		if (desktop != "uninitialized") {
@@ -77,18 +138,20 @@
 			defPrimaryColor = g_settings_get_string(bgsetting, "primary-color");
 			defColorShading = g_settings_get_string(bgsetting, "color-shading-type");
 		} else if (desktop == "xfce") {
+			// Dynamic load of xfconf library
+
 			GError *xferror = NULL;
-			if (xfconf_init(&xferror)) {
-				bgchannel = xfconf_channel_get("xfce4-desktop");
+			if (xfconfLibraryInit() && ld_xfconf_init(&xferror)) {
+				bgchannel = ld_xfconf_channel_get("xfce4-desktop");
 				std::string optionPrefix = "/backdrop/screen0/monitor0/workspace0/";
 				optionImage = optionPrefix + "last-image";
 				optionColor = optionPrefix + "color1";
 				optionImageStyle = optionPrefix + "image-style";
 				optionColorStyle = optionPrefix + "color-style";
-				defPictureURI = xfconf_channel_get_string(bgchannel, optionImage.c_str(), "");
-				defPictureStyle = xfconf_channel_get_int(bgchannel, optionImageStyle.c_str(), -1);
-				defColorExists = xfconf_channel_get_property(bgchannel, optionColor.c_str(), &defColor);
-				defColorStyle = xfconf_channel_get_int(bgchannel, optionColorStyle.c_str(), -1);
+				defPictureURI = ld_xfconf_channel_get_string(bgchannel, optionImage.c_str(), "");
+				defPictureStyle = ld_xfconf_channel_get_int(bgchannel, optionImageStyle.c_str(), -1);
+				defColorExists = ld_xfconf_channel_get_property(bgchannel, optionColor.c_str(), &defColor);
+				defColorStyle = ld_xfconf_channel_get_int(bgchannel, optionColorStyle.c_str(), -1);
 			} else {
 				// Configuration failed to initialize, we won't set the wallpaper
 				desktop = "xfce_error";
@@ -285,9 +348,9 @@ end:
 			unsigned int ub = b * 256 + b;
 			unsigned int alpha = 65535;
 			std::string concatPath(gameDirStr + path);
-			xfconf_channel_set_string(bgchannel, optionImage.c_str(), concatPath.c_str());
-			xfconf_channel_set_int(bgchannel, optionColorStyle.c_str(), 0);
-			xfconf_channel_set_int(bgchannel, optionImageStyle.c_str(), 4);
+			ld_xfconf_channel_set_string(bgchannel, optionImage.c_str(), concatPath.c_str());
+			ld_xfconf_channel_set_int(bgchannel, optionColorStyle.c_str(), 0);
+			ld_xfconf_channel_set_int(bgchannel, optionImageStyle.c_str(), 4);
 			GValue colorValue = G_VALUE_INIT;
 			GPtrArray *colorArr = g_ptr_array_sized_new(4);
 			GType colorArrType = g_type_from_name("GPtrArray_GValue_");
@@ -297,7 +360,7 @@ end:
 							 << " -t uint -t uint -t uint -t uint -s " << ub
 							 << " -s " << ug << " -s " << ub << " -s " << alpha;
 				int colorCommandRes = system(colorCommand.str().c_str());
-				defColorExists = xfconf_channel_get_property(bgchannel, optionColor.c_str(), &defColor);
+				defColorExists = ld_xfconf_channel_get_property(bgchannel, optionColor.c_str(), &defColor);
 				colorArrType = g_type_from_name("GPtrArray_GValue_");
 				if (!colorArrType) {
 					// Let's do some debug output here and skip changing the color
@@ -323,7 +386,7 @@ end:
 			g_ptr_array_add(colorArr, vb);
 			g_ptr_array_add(colorArr, va);
 			g_value_set_boxed(&colorValue, colorArr);
-			xfconf_channel_set_property(bgchannel, optionColor.c_str(), &colorValue);
+			ld_xfconf_channel_set_property(bgchannel, optionColor.c_str(), &colorValue);
 		} else if (desktop == "kde") {
 			std::stringstream command;
 			std::string concatPath(gameDirStr + path);
@@ -405,24 +468,24 @@ RB_METHOD(wallpaperReset)
 			g_settings_set_string(bgsetting, "color-shading-type", defColorShading.c_str());
 		} else if (desktop == "xfce") {
 			if (defColorExists) {
-				xfconf_channel_set_property(bgchannel, optionColor.c_str(), &defColor);
+				ld_xfconf_channel_set_property(bgchannel, optionColor.c_str(), &defColor);
 			} else {
-				xfconf_channel_reset_property(bgchannel, optionColor.c_str(), false);
+				ld_xfconf_channel_reset_property(bgchannel, optionColor.c_str(), false);
 			}
 			if (defPictureURI == "") {
-				xfconf_channel_reset_property(bgchannel, optionImage.c_str(), false);
+				ld_xfconf_channel_reset_property(bgchannel, optionImage.c_str(), false);
 			} else {
-				xfconf_channel_set_string(bgchannel, optionImage.c_str(), defPictureURI.c_str());
+				ld_xfconf_channel_set_string(bgchannel, optionImage.c_str(), defPictureURI.c_str());
 			}
 			if (defPictureStyle == -1) {
-				xfconf_channel_reset_property(bgchannel, optionImageStyle.c_str(), false);
+				ld_xfconf_channel_reset_property(bgchannel, optionImageStyle.c_str(), false);
 			} else {
-				xfconf_channel_set_int(bgchannel, optionImageStyle.c_str(), defPictureStyle);
+				ld_xfconf_channel_set_int(bgchannel, optionImageStyle.c_str(), defPictureStyle);
 			}
 			if (defColorStyle == -1) {
-				xfconf_channel_reset_property(bgchannel, optionColorStyle.c_str(), false);
+				ld_xfconf_channel_reset_property(bgchannel, optionColorStyle.c_str(), false);
 			} else {
-				xfconf_channel_set_int(bgchannel, optionColorStyle.c_str(), defColorStyle);
+				ld_xfconf_channel_set_int(bgchannel, optionColorStyle.c_str(), defColorStyle);
 			}
 		} else if (desktop == "kde") {
 			std::stringstream command;
@@ -497,8 +560,6 @@ void wallpaperBindingInit()
 void wallpaperBindingTerminate()
 {
 	// Clean up.
-	if (desktop == "xfce") {
-		xfconf_shutdown();
-	}
+	xfconfLibraryShutdown();
 }
 #endif

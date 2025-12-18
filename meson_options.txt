@@ -21,3 +21,6 @@ option('fmod_core_lib_dir', type: 'string', value: '', description: 'Manual fmod
 option('fmod_fsbank_lib_dir', type: 'string', value: '', description: 'Manual fmod fsbank lib dir')
 option('fmod_studio_lib_dir', type: 'string', value: '', description: 'Manual fmod studio lib dir')
 option('auto_clean_fmod', type: 'boolean', value: false, description: 'Automatically release some fmod resources')
+
+
+option('copy_gamefiles', type: 'boolean', value: false, description: 'Copy game files to install dir')
