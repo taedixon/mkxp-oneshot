@@ -118,6 +118,19 @@
 		
 	}
 
+	bool tryGetGSettings(const char* schema_id, GSettings** outSetting) {
+		GSettingsSchemaSource* schemaSource = g_settings_schema_source_get_default();
+		if (schemaSource == NULL) {
+			return false;
+		}
+		GSettingsSchema* schema = g_settings_schema_source_lookup(schemaSource, schema_id, true);
+		if (schema == NULL) {
+			return false;
+		}
+		*outSetting = g_settings_new(schema_id);
+		return true;
+	}
+
 	void desktopEnvironmentInit()
 	{
 		if (desktop != "uninitialized") {
@@ -125,18 +138,29 @@
 		}
 		desktop = shState->oneshot().desktopEnv;
 		if (desktop == "cinnamon" || desktop == "gnome" || desktop == "mate" || desktop == "deepin") {
-			if (desktop == "cinnamon" || desktop == "gnome" || desktop == "deepin") {
-				if (desktop == "cinnamon") bgsetting = g_settings_new("org.cinnamon.desktop.background");
-				else if (desktop == "deepin") bgsetting = g_settings_new("com.deepin.wrap.gnome.desktop.background");
-				else bgsetting = g_settings_new("org.gnome.desktop.background");
-				defPictureURI = g_settings_get_string(bgsetting, "picture-uri");
+			bool gSettingSuccess = false;
+			const char* picUriSettingKey = NULL;
+			if (desktop == "cinnamon") {
+				gSettingSuccess = tryGetGSettings("org.cinnamon.desktop.background", &bgsetting);
+				picUriSettingKey = "picture-uri";
+			} else if (desktop == "deepin") {
+				gSettingSuccess = tryGetGSettings("com.deepin.wrap.gnome.desktop.background", &bgsetting);
+				picUriSettingKey = "picture-uri";
+			} else if (desktop == "gnome") {
+				gSettingSuccess = tryGetGSettings("org.gnome.desktop.background", &bgsetting);
+				picUriSettingKey = "picture-uri";
 			} else {
-				bgsetting = g_settings_new("org.mate.background");
-				defPictureURI = g_settings_get_string(bgsetting, "picture-filename");
+				gSettingSuccess = tryGetGSettings("org.mate.background", &bgsetting);
+				picUriSettingKey = "picture-filename";
 			}
-			defPictureOptions = g_settings_get_string(bgsetting, "picture-options");
-			defPrimaryColor = g_settings_get_string(bgsetting, "primary-color");
-			defColorShading = g_settings_get_string(bgsetting, "color-shading-type");
+			if (gSettingSuccess) {
+				defPictureURI = g_settings_get_string(bgsetting, picUriSettingKey);
+				defPictureOptions = g_settings_get_string(bgsetting, "picture-options");
+				defPrimaryColor = g_settings_get_string(bgsetting, "primary-color");
+				defColorShading = g_settings_get_string(bgsetting, "color-shading-type");
+			} else {
+				desktop = "no_desktop";
+			}
 		} else if (desktop == "xfce") {
 			// Dynamic load of xfconf library
 
@@ -154,7 +178,7 @@
 				defColorStyle = ld_xfconf_channel_get_int(bgchannel, optionColorStyle.c_str(), -1);
 			} else {
 				// Configuration failed to initialize, we won't set the wallpaper
-				desktop = "xfce_error";
+				desktop = "no_desktop";
 				g_error_free(xferror);
 			}
 		} else if (desktop == "kde") {
@@ -223,9 +247,8 @@
 				Debug() << "FATAL: Cannot find desktop configuration!";
 				desktop = "kde_error";
 			}
-		} else {
-			fallbackPath = std::string(getenv("HOME")) + "/Desktop/ONESHOT_hint.png";
 		}
+		fallbackPath = std::string(getenv("HOME")) + "/Desktop/ONESHOT_hint.png";
 	}
 #endif
 
@@ -415,6 +438,7 @@ end:
 		} else {
 			std::ifstream srcHint(gameDirStr + path);
 			std::ofstream dstHint(fallbackPath);
+			Debug() << "Copying hint file from " << gameDirStr + path << " to " << fallbackPath;
 			dstHint << srcHint.rdbuf();
 			srcHint.close();
 			dstHint.close();
@@ -539,7 +563,9 @@ RB_METHOD(wallpaperReset)
 			Debug() << "Reset result:" << result;
 		} else {
 			if (remove(fallbackPath.c_str()) != 0) {
-				Debug() << "Failed to delete:" << fallbackPath;
+				Debug() << "Failed to delete:" << fallbackPath << "(" << strerror(errno) << ")";
+			} else {
+				Debug() << "Removed desktop hint at " << fallbackPath;
 			}
 		}
 	#endif

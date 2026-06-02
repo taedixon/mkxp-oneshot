@@ -36,6 +36,7 @@ sizeof = {
 win64 = (sizeof['void*'] != sizeof['long'])
 
 global_args += '-DHAVE_NANOSLEEP'
+global_args += '-DONESHOT_DISABLE_GLDEBUG'
 
 gfx_backend = get_option('gfx_backend')
 if gfx_backend == 'gles'

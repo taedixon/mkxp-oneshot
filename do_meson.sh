@@ -1,6 +1,6 @@
 meson setup builddir
 rm -rf debug
-meson configure builddir -Dprefix="$(pwd)/debug"
+meson configure builddir -Dprefix="$(pwd)/debug" --buildtype=debug
 cd builddir
 meson compile -v && meson install
 

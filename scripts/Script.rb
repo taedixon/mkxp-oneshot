@@ -402,18 +402,25 @@ module Script
     begin
       # If we're on a supported Linux DE, make a .desktop file
       # so the clover icon can be properly shown
+
+      # [2026] Can't find any information that suggests this wouldn't work in gnome...
+      #        I'm going to assume that most DEs will support clicking a .desktop file
+	  #        and for the ones that don't, I don't think I have a better solution
+	  #        than to ask them to just launch the journal from the steam folder
+	  #        using the path provided.
       if Oneshot::OS == "linux" and SUPPORTED_DE.include? Oneshot::DE
-        copy_file_chmod("#{Dir.pwd}/#{Oneshot::JOURNAL}", "#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}", 0755)
-        copy_file_chmod("#{Dir.pwd}/#{Oneshot::JOURNAL}.png", "#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}.png", 0644)
+        # copy_file_chmod("#{Dir.pwd}/#{Oneshot::JOURNAL}", "#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}", 0755)
+        # copy_file_chmod("#{Dir.pwd}/#{Oneshot::JOURNAL}.png", "#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}.png", 0644)
         path = "#{Oneshot::GAME_PATH}/Oneshot/#{Oneshot::JOURNAL}.desktop"
         File.open(path, "wb") do |output|
           output.write("[Desktop Entry]\n")
           output.write("Comment=...\n")
           output.write("Terminal=false\n")
           output.write("Name=_______\n")
-          output.write("Exec=#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}\n")
+          output.write("Exec=#{Dir.pwd}/#{Oneshot::JOURNAL}\n")
           output.write("Type=Application\n")
-          output.write("Icon=#{Oneshot::SAVE_PATH}/#{Oneshot::JOURNAL}.png\n")
+          output.write("Icon=#{Dir.pwd}/#{Oneshot::JOURNAL}.png\n")
+		  output.write("# If your system does not support running this file directly, please follow the path in Exec.")
         end
         File.chmod(0755, path)
       # If the journal is a file, copy it to Documents
@@ -424,6 +431,7 @@ module Script
         File.symlink "#{Dir.pwd}/#{Oneshot::JOURNAL}", "#{Oneshot::GAME_PATH}/Oneshot/#{Oneshot::JOURNAL}"
       end
     rescue Errno::EACCES => e
+	rescue Errno::ETXTBSY => e
       # this probably means the clover.exe already exists and is running, so no need to create it again
     rescue Errno::EEXIST => e
       # this means that the journal file already exists, so no need to create it again
